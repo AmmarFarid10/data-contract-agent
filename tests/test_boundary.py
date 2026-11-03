@@ -37,3 +37,16 @@ def test_trace_header_and_health(client):
     response = client.get("/health")
     assert response.status_code == 200 and response.headers["X-Request-ID"]
     assert response.headers["Cache-Control"] == "no-store"
+
+
+def test_ambiguous_duplicate_api_key_configuration_is_rejected(client, monkeypatch):
+    import json
+
+    from conftest import KEYS
+
+    duplicate = [*KEYS, {**KEYS[0], "tenant": "another-tenant", "role": "reviewer"}]
+    monkeypatch.setenv("AUTH_KEYS_JSON", json.dumps(duplicate))
+    assert (
+        client.post("/documents", json={"source": "x", "title": "X", "text": "data"}).status_code
+        == 503
+    )

@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, ConfigDict, Field, StrictBool
+from starlette.responses import JSONResponse
 
 from app.core.security import Principal
 
@@ -56,20 +57,14 @@ def instrument(app: FastAPI) -> None:
             try:
                 size = int(length)
             except ValueError:
-                return __import__("starlette.responses", fromlist=["JSONResponse"]).JSONResponse(
-                    {"detail": "Invalid content length"}, status_code=400
-                )
+                return JSONResponse({"detail": "Invalid content length"}, status_code=400)
             if size < 0 or size > limit:
-                from starlette.responses import JSONResponse
-
                 return JSONResponse({"detail": "Request size rejected"}, status_code=413)
         # Count actual bytes, including chunked uploads, before JSON parsing.
         content = bytearray()
         async for chunk in request.stream():
             content.extend(chunk)
             if len(content) > limit:
-                from starlette.responses import JSONResponse
-
                 return JSONResponse({"detail": "Request too large"}, status_code=413)
         request._body = bytes(content)
         response = await call_next(request)

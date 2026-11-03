@@ -4,7 +4,7 @@ Python 3.12.14; `uv sync --frozen --extra dev` from a fresh project environment 
 
 | Check | Result |
 | --- | --- |
-| Domain/boundary/provider/workflow tests | 46 passed; semantic test deselected explicitly |
+| Domain/boundary/provider/workflow tests | 47 passed; semantic test deselected explicitly |
 | Actual pretrained embedding test | 1 passed; downloaded BGE small ONNX weights used |
 | Ruff | Passed |
 | Mypy | Passed with missing third-party imports ignored; not strict-mode certification |

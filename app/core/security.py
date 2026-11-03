@@ -26,9 +26,15 @@ def authenticate(authorization: Annotated[str | None, Header()] = None) -> Princ
         if not isinstance(configured, list) or not configured:
             raise ValueError()
         matched = None
+        seen_keys = set()
         for record in configured:
             key = record["key"]
             if not isinstance(key, str) or len(key) < 24:
+                raise ValueError()
+            if key in seen_keys:
+                raise ValueError()
+            seen_keys.add(key)
+            if not all(isinstance(record[field], str) for field in ["tenant", "subject", "role"]):
                 raise ValueError()
             principal = Principal(record["tenant"], record["subject"], record["role"])
             if (
