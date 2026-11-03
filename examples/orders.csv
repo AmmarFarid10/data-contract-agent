@@ -1,0 +1,5 @@
+order_id,amount,status,comment
+A-1,120,paid, standard
+A-1,120,paid, standard
+A-2,NaN,unknown,needs manual correction
+A-3,40,paid,=HYPERLINK("https://example.invalid")

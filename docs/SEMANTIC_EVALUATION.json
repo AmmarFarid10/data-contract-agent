@@ -1,0 +1,26 @@
+{
+  "embedding_model": "BAAI/bge-small-en-v1.5",
+  "documents": 2,
+  "results": [
+    {
+      "mode": "bm25",
+      "positive_queries": 2,
+      "hit_at_3": 1.0,
+      "mrr_at_3": 0.75
+    },
+    {
+      "mode": "dense",
+      "positive_queries": 2,
+      "hit_at_3": 1.0,
+      "mrr_at_3": 1.0
+    },
+    {
+      "mode": "hybrid",
+      "positive_queries": 2,
+      "hit_at_3": 1.0,
+      "mrr_at_3": 1.0
+    }
+  ],
+  "cross_tenant_evidence_visible": false,
+  "scope": "synthetic retrieval mechanics only"
+}

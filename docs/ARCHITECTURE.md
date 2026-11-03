@@ -1,0 +1,11 @@
+# Architecture decisions
+
+1. **Separate verified facts from model suggestions.** Domain services own arithmetic, contract checks, order ownership and effect authorization. Model output is untrusted input to schema and evidence validation.
+2. **Filter access before retrieval.** SQLite first selects active chunks for the server-derived tenant, principal scope and domain entity. BM25 and cosine ranking see only authorized rows, rather than retrieving foreign content and discarding it later.
+3. **Persist embeddings at ingestion.** Query execution embeds only the query and compares stored normalized vectors. Changing encoder identity requires re-ingestion. Full matrix scans suit a small corpus, not millions of chunks; move vectors/metadata to a tenant-filtered ANN index when the measured workload requires it.
+4. **Keep retrieval experiments inspectable.** Reciprocal rank fusion combines ranks without treating heterogeneous scores as calibrated confidence. Candidate thresholds differ from answer support. Quote checks and deterministic domain validation are separate from retrieval relevance.
+5. **Use immutable versions and bounded operations.** Revisions include text/metadata/chunk settings/encoder identity. Comparisons or approvals bind to source snapshots, including additions and access changes, rather than silently using newer documents.
+6. **Make the reviewed effect transactional.** The agent applications store decisions and their local artifacts together. Durable checkpoints orchestrate reasoning, while the business ledger owns final effect status and replay behavior. Single-process locking does not solve distributed concurrency.
+7. **Avoid fake integrations.** Inputs are real API uploads and stored records, with clearly synthetic example fixtures. Optional local model adapters are implemented and transport-tested; there is no pretended customer deployment, external message delivery or fabricated accuracy claim.
+
+Shared core modules handle database transactions, identity, versioned retrieval, bounded model calls and (for agents) approval orchestration. Each domain service is independently testable and contains its own business constraints. See README for the project's event-order diagram.

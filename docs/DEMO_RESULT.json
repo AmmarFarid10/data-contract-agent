@@ -1,0 +1,33 @@
+{
+  "scenario": "Order feed quality repair",
+  "operations": [
+    "trim_whitespace",
+    "drop_exact_duplicates",
+    "escape_formulas"
+  ],
+  "status": "APPROVED",
+  "result": {
+    "artifact_created": true,
+    "artifact_hash": "75702facbbc11346793af964203e8cfaf3ee49b07eb27783d2bf65fbfde65088",
+    "impact": {
+      "rows_before": 4,
+      "rows_after": 3,
+      "rows_removed": 1,
+      "cells_changed": 3
+    },
+    "remaining_issues": [
+      {
+        "code": "type_errors",
+        "count": 1,
+        "column": "amount"
+      },
+      {
+        "code": "enum_errors",
+        "count": 1,
+        "column": "status"
+      }
+    ],
+    "fully_repaired": false
+  },
+  "source_overwritten": false
+}

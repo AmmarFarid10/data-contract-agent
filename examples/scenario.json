@@ -1,0 +1,59 @@
+{
+  "document": {
+    "source": "quality-handbook",
+    "title": "Data quality repair rules",
+    "entity": "data-quality",
+    "text": "Exact duplicate rows may be removed only in an approved derived copy. Whitespace cells may be trimmed when the reviewer accepts the preview. Spreadsheet formula cells must be escaped before spreadsheet export. Duplicate key values with conflicting records require manual reconciliation. Type errors and unknown enum values must not be guessed. Preserve the source dataset and report remaining issues."
+  },
+  "investigation": {
+    "dataset_id": "orders",
+    "contract": {
+      "columns": [
+        {
+          "name": "order_id",
+          "unique": true
+        },
+        {
+          "name": "amount",
+          "dtype": "number",
+          "minimum": 0
+        },
+        {
+          "name": "status",
+          "allowed_values": [
+            "paid",
+            "pending"
+          ]
+        },
+        {
+          "name": "comment"
+        }
+      ]
+    }
+  },
+  "expected_operations": [
+    "trim_whitespace",
+    "drop_exact_duplicates",
+    "escape_formulas"
+  ],
+  "retrieval_cases": [
+    {
+      "question": "How should identical records be deduplicated?",
+      "entity": "data-quality",
+      "source": "quality-handbook"
+    },
+    {
+      "question": "What happens to invalid numeric values?",
+      "entity": "data-quality",
+      "source": "quality-handbook"
+    }
+  ],
+  "distractors": [
+    {
+      "source": "retention-handbook",
+      "title": "Dataset retention",
+      "entity": "data-quality",
+      "text": "Dataset retention and archive requirements apply to stored imports. Keep archived versions for the agreed retention period. Retention does not authorize changing invalid record values."
+    }
+  ]
+}
