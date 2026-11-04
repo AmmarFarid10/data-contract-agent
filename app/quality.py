@@ -44,6 +44,7 @@ def analyze(text: str, contract: Contract) -> dict:
         issue("unexpected_columns", len(set(header) - names))
     issue("exact_duplicate_rows", len(rows) - len({tuple(r) for r in rows}))
     issue("whitespace_cells", sum(v != v.strip() for row in rows for v in row))
+    issue("spreadsheet_formula_headers", count_formula_headers(header))
     issue(
         "spreadsheet_formula_cells",
         sum(
@@ -96,6 +97,18 @@ def _is_number(value: str) -> bool:
         return math.isfinite(float(value))
     except ValueError:
         return False
+
+
+def count_formula_headers(header: list[str]) -> int:
+    """Count formula-like column names without changing contract identifiers.
+
+    Use the same prefix and finite-number policy as data-cell escaping. Header
+    repairs require explicit schema changes rather than an automatic rename.
+    """
+    return sum(
+        value.lstrip().startswith(("=", "+", "-", "@")) and not _is_number(value)
+        for value in header
+    )
 
 
 def proposed_operations(profile: dict) -> list[str]:

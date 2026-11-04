@@ -58,6 +58,8 @@ Optional local LLM features use an existing Ollama `qwen3:4b`. Set `OLLAMA_MODEL
 5. As a different reviewer, POST `/investigations/{id}/decision` with `approved` and the exact `proposal_hash`.
 6. GET `/investigations/{id}/artifact` after approval. Reusing the same approved decision returns the original result; a conflicting decision fails.
 
+Formula-like column names are reported as `spreadsheet_formula_headers` and remain unresolved: automatically escaping a header would change its contract identifier. CSV artifact downloads return **409** while such headers remain, including artifacts stored before this validation was introduced. Correct the source column names and matching contract explicitly, upload the corrected dataset, and create a new investigation and approval. Source revisions and approved artifacts are retained unchanged. Finite numeric headers such as `-20` remain supported under the same policy used for numeric data cells. This prefix check is a defense in depth measure, not a guarantee of safe behavior in every spreadsheet application.
+
 Approvals expire after 15 minutes and do not refresh on replay. The run ledger is authoritative if a process crashes after committing an approved artifact but before checkpointing the final graph state; a repeated decision returns the existing result without another effect. Checkpoints and the business ledger are separate, while the decision/artifact transaction is atomic. Deploy one worker; a process lock is not distributed concurrency control.
 
 ```mermaid
