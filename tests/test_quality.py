@@ -28,6 +28,69 @@ def test_formula_escape_preserves_numeric_negatives():
     assert impact["cells_changed"] == 2
 
 
+@pytest.mark.parametrize("header", ["=1+1", " +SUM(A1)", "\t@SUM(A1)", "-SUM(A1)"])
+def test_formula_headers_are_reported_without_renaming_contract_columns(header):
+    source = f"{header}\n=2+2\n"
+    contract = Contract.model_validate({"columns": [{"name": header}]})
+    output, impact = repair(source, ["escape_formulas"])
+    result = analyze(output, contract)
+    assert result["columns"] == [header]
+    assert result["issues"] == [{"code": "spreadsheet_formula_headers", "count": 1, "column": None}]
+    assert not result["passes_contract"]
+    assert impact["cells_changed"] == 1
+
+
+@pytest.mark.parametrize("header", ["=1+1", " +SUM(A1)", "\t@SUM(A1)", "-SUM(A1)", "-20"])
+def test_formula_header_download_guard_preserves_source_and_approval(client, header):
+    seed(client)
+    source = f"{header}\n=2+2\n"
+    assert (
+        client.post("/datasets", json={"dataset_id": "headers", "csv_text": source}).status_code
+        == 201
+    )
+    run = start(
+        client, body={"dataset_id": "headers", "contract": {"columns": [{"name": header}]}}
+    ).json()
+    assert run["status"] == "AWAITING_APPROVAL"
+    auth(client, "b")
+    approved = decide(client, run).json()
+    assert approved["status"] == "APPROVED"
+    assert approved["result"]["artifact_created"]
+    response = client.get("/investigations/" + run["id"] + "/artifact")
+    if header == "-20":
+        assert response.status_code == 200
+        assert response.text == "-20\n'=2+2\n"
+        assert approved["result"]["fully_repaired"]
+    else:
+        assert response.status_code == 409
+        assert "formula-like column names" in response.json()["detail"]
+        assert "Content-Disposition" not in response.headers
+        assert not approved["result"]["fully_repaired"]
+    assert client.app.state.service.dataset("demo", "headers")[0] == source
+    assert decide(client, run).json() == approved
+
+
+@pytest.mark.parametrize("header,status", [("=1+1", 409), ("name", 200)])
+def test_download_checks_legacy_artifact_without_reapplying_upload_size_limit(
+    client, header, status
+):
+    seed(client)
+    run = start(client).json()
+    auth(client, "b")
+    assert decide(client, run).json()["status"] == "APPROVED"
+    # Simulate a stored artifact from before header validation. CSV quoting and
+    # escaping may grow an accepted upload beyond the ingestion byte limit.
+    legacy_text = header + "\n" + "x" * 1000001 + "\n"
+    with client.app.state.service.db.connect() as db:
+        db.execute("UPDATE artifacts SET text=? WHERE run_id=?", (legacy_text, run["id"]))
+    response = client.get("/investigations/" + run["id"] + "/artifact")
+    assert response.status_code == status
+    if status == 200:
+        assert response.text == legacy_text
+    auth(client, "c")
+    assert client.get("/investigations/" + run["id"] + "/artifact").status_code == 404
+
+
 def test_arbitrary_transformations_cannot_execute_code():
     with pytest.raises(ValueError):
         repair("id\n1", ["eval_python"])

@@ -1,3 +1,5 @@
+import csv
+import io
 import os
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -9,6 +11,7 @@ from app.core.database import Database
 from app.core.http import Decision, Document, ingest, instrument
 from app.core.retrieval import Knowledge, configured_encoder
 from app.core.security import Principal, authenticate
+from app.quality import count_formula_headers
 from app.schemas import Dataset, Investigation
 from app.service import DataQuality
 
@@ -78,6 +81,15 @@ def download(run_id: UUID, request: Request, principal: Identity):
         ).fetchone()
     if not row:
         raise HTTPException(404, "No approved repair artifact")
+    # Serialized repairs can exceed ingestion's byte limit after CSV quoting.
+    # Inspect only the stored artifact's header; do not reapply upload limits.
+    header = next(csv.reader(io.StringIO(row[0], newline="")), [])
+    if count_formula_headers(header):
+        raise HTTPException(
+            409,
+            "CSV download blocked: formula-like column names require manual correction "
+            "of the source and contract, followed by a new investigation and approval.",
+        )
     return Response(
         row[0],
         media_type="text/csv",
